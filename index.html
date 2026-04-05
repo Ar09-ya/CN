@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEET Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#07070F;
+  --surface:#0D0D1C;
+  --card:rgba(255,255,255,0.04);
+  --card-border:rgba(255,255,255,0.09);
+  --card-hover:rgba(255,255,255,0.07);
+  --text:#E6E6F4;
+  --text-dim:#9898B8;
+  --muted:#3C3C5C;
+  --subtle:rgba(255,255,255,0.05);
+
+  --bio:#00E87A;
+  --bio-dim:rgba(0,232,122,0.10);
+  --bio-glow:rgba(0,232,122,0.25);
+  --bio-mid:#00b85f;
+
+  --chem:#1A9FFF;
+  --chem-dim:rgba(26,159,255,0.10);
+  --chem-glow:rgba(26,159,255,0.25);
+  --chem-mid:#0077cc;
+
+  --phy:#FF5A1F;
+  --phy-dim:rgba(255,90,31,0.10);
+  --phy-glow:rgba(255,90,31,0.25);
+  --phy-mid:#cc4215;
+
+  --gold:#FFB800;
+  --radius:18px;
+  --radius-sm:11px;
+  --ring-size:2π;
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Noise texture overlay ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  pointer-events:none;z-index:0;opacity:.6;
+}
+
+/* ── Ambient glow blobs ── */
+.ambient{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;}
+.ambient-1{width:600px;height:400px;background:rgba(0,232,122,0.04);top:-100px;left:-200px;}
+.ambient-2{width:500px;height:500px;background:rgba(26,159,255,0.04);bottom:0;right:-150px;}
+
+.app{max-width:900px;margin:0 auto;padding:20px 16px 60px;position:relative;z-index:1;}
+
+/* ── Header ── */
+.app-header{
+  background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.02) 100%);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:28px 32px;
+  margin-bottom:16px;
+  position:relative;
+  overflow:hidden;
+}
+.app-header::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,232,122,0.4),rgba(26,159,255,0.4),rgba(255,90,31,0.4),transparent);
+}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.header-left{}
+.app-title{
+  font-family:'Syne',sans-serif;
+  font-size:26px;font-weight:800;
+  background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:-0.5px;
+  margin-bottom:4px;
+}
+.app-title span{
+  background:linear-gradient(135deg,var(--bio),var(--chem));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.app-subtitle{font-size:13px;color:var(--text-dim);font-weight:400;}
+
+.countdown-pill{
+  background:rgba(255,184,0,0.12);
+  border:1px solid rgba(255,184,0,0.25);
+  border-radius:12px;
+  padding:10px 18px;
+  text-align:center;
+  flex-shrink:0;
+}
+.countdown-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:2px;}
+.countdown-num{
+  font-family:'Syne',sans-serif;
+  font-size:28px;font-weight:800;color:var(--gold);
+  line-height:1;
+}
+.countdown-sub{font-size:10px;color:rgba(255,184,0,0.6);margin-top:2px;}
+
+.quote-bar{
+  margin-top:20px;
+  padding:12px 16px;
+  background:rgba(255,255,255,0.03);
+  border-radius:10px;
+  border-left:3px solid var(--bio);
+  font-size:13px;
+  color:var(--text-dim);
+  font-style:italic;
+  transition:opacity .4s;
+}
+.quote-bar span{color:var(--text);font-style:normal;font-weight:500;}
+
+/* ── Level badge ── */
+.level-bar{
+  display:flex;align-items:center;gap:12px;
+  margin-top:16px;
+}
+.level-badge{
+  font-family:'Syne',sans-serif;
+  font-size:11px;font-weight:700;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(255,184,0,0.15);
+  color:var(--gold);
+  border:1px solid rgba(255,184,0,0.3);
+  white-space:nowrap;
+  letter-spacing:.04em;
+}
+.level-track{flex:1;height:4px;background:var(--muted);border-radius:2px;overflow:hidden;}
+.level-fill{height:100%;background:linear-gradient(90deg,var(--gold),#ff9a00);border-radius:2px;transition:width .6s ease;}
+.level-next{font-size:11px;color:var(--text-dim);white-space:nowrap;}
+
+/* ── Dashboard ring + stats ── */
+.dashboard{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:16px;align-items:start;}
+@media(max-width:640px){.dashboard{grid-template-columns:1fr;}}
+
+.main-ring-card{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:24px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:8px;width:180px;flex-shrink:0;
+}
+@media(max-width:640px){.main-ring-card{width:100%;flex-direction:row;gap:20px;padding:20px;}}
+.ring-wrap{position:relative;width:120px;height:120px;flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.ring-pct{
+  font-family:'Syne',sans-serif;
+  font-size:26px;font-weight:800;
+  color:var(--text);
+  line-height:1;
+}
+.ring-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
+.ring-card-label{
+  font-family:'Syne',sans-serif;
+  font-size:12px;font-weight:600;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.stats-right{display:flex;flex-direction:column;gap:12px;}
+.stats-row-top{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:520px){.stats-row-top{grid-template-columns:repeat(2,1fr);}}
+
+.stat-card{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius-sm);
+  padding:16px 18px;
+  transition:background .2s,border-color .2s;
+}
+.stat-card:hover{background:var(--card-hover);}
+.stat-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:6px;}
+.stat-value{
+  font-family:'Syne',sans-serif;
+  font-size:30px;font-weight:800;
+  color:var(--text);line-height:1;
+}
+.stat-sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.stat-card.highlight .stat-value{color:var(--bio);}
+.stat-card.highlight-rev .stat-value{color:var(--gold);}
+
+/* Subject progress bars */
+.subj-bars{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius-sm);
+  padding:16px 18px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.subj-row{display:flex;align-items:center;gap:12px;}
+.subj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.subj-name{font-size:12px;font-weight:600;width:70px;flex-shrink:0;font-family:'Syne',sans-serif;letter-spacing:.02em;}
+.bar-track{flex:1;height:6px;background:var(--muted);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+.subj-pct{font-size:12px;font-family:'Syne',sans-serif;font-weight:700;min-width:36px;text-align:right;}
+
+/* ── Subject tabs ── */
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.tab-btn{
+  padding:10px 22px;
+  border-radius:30px;
+  border:1px solid var(--card-border);
+  background:var(--card);
+  color:var(--text-dim);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:'Syne',sans-serif;
+  letter-spacing:.02em;
+}
+.tab-btn:hover{background:var(--card-hover);color:var(--text);}
+.tab-btn.active-bio{
+  background:var(--bio-dim);
+  color:var(--bio);
+  border-color:rgba(0,232,122,0.35);
+  box-shadow:0 0 20px var(--bio-glow);
+}
+.tab-btn.active-chem{
+  background:var(--chem-dim);
+  color:var(--chem);
+  border-color:rgba(26,159,255,0.35);
+  box-shadow:0 0 20px var(--chem-glow);
+}
+.tab-btn.active-phy{
+  background:var(--phy-dim);
+  color:var(--phy);
+  border-color:rgba(255,90,31,0.35);
+  box-shadow:0 0 20px var(--phy-glow);
+}
+
+/* ── Filter row ── */
+.filter-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.filter-btn{
+  padding:5px 14px;border-radius:20px;
+  border:1px solid var(--card-border);
+  background:transparent;color:var(--text-dim);
+  font-size:12px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:all .15s;
+}
+.filter-btn:hover{background:var(--card);color:var(--text);}
+.filter-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+/* ── Section label ── */
+.sec-label{
+  font-family:'Syne',sans-serif;
+  font-size:10px;font-weight:700;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin:18px 0 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--muted);}
+
+/* ── Chapter card ── */
+.ch-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius-sm);
+  margin-bottom:8px;
+  overflow:hidden;
+  transition:border-color .2s, background .2s, box-shadow .3s;
+  position:relative;
+}
+.ch-card::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  border-radius:3px 0 0 3px;
+  background:var(--card-border);
+  transition:background .2s,box-shadow .2s;
+}
+.ch-card.bio-card::before{background:var(--bio);}
+.ch-card.chem-card::before{background:var(--chem);}
+.ch-card.phy-card::before{background:var(--phy);}
+
+.ch-card.chapter-done{
+  border-color:rgba(0,232,122,0.25);
+  background:rgba(0,232,122,0.04);
+}
+.ch-card.chapter-done::before{box-shadow:0 0 12px var(--bio-glow);}
+.ch-card.needs-rev{border-color:rgba(255,184,0,0.3);}
+.ch-card.needs-rev::before{background:var(--gold);}
+
+.ch-card:hover{background:var(--card-hover);}
+.ch-card.open{border-color:rgba(255,255,255,0.15);}
+
+.ch-header{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px 14px 20px;
+  cursor:pointer;user-select:none;
+}
+
+/* Custom checkbox */
+.ch-check{
+  width:22px;height:22px;border-radius:6px;
+  border:1.5px solid var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.ch-check::before{
+  content:'';
+  position:absolute;inset:0;
+  background:var(--bio);
+  transform:scale(0);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+  border-radius:4px;
+}
+.ch-check.checked::before{transform:scale(1);}
+.ch-check svg{position:relative;z-index:1;display:none;}
+.ch-check.checked svg{display:block;}
+.ch-check.checked{border-color:var(--bio);}
+
+.ch-name{
+  font-size:14px;font-weight:600;color:var(--text);
+  flex:1;line-height:1.35;
+  font-family:'Syne',sans-serif;
+  transition:color .2s;
+}
+.ch-done-text{color:var(--text-dim)!important;text-decoration:line-through;text-decoration-color:var(--muted);}
+
+.ch-meta{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+.priority-badge{
+  font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;
+  letter-spacing:.04em;white-space:nowrap;
+  font-family:'Syne',sans-serif;
+}
+.badge-must{background:rgba(0,232,122,0.12);color:var(--bio);border:1px solid rgba(0,232,122,0.25);}
+.badge-high{background:rgba(26,159,255,0.12);color:var(--chem);border:1px solid rgba(26,159,255,0.25);}
+.badge-mod{background:rgba(255,149,0,0.12);color:#FF9500;border:1px solid rgba(255,149,0,0.25);}
+
+.q-tag{
+  font-size:12px;color:var(--text-dim);
+  background:rgba(255,255,255,0.05);
+  padding:3px 9px;border-radius:8px;
+  font-family:'Syne',sans-serif;font-weight:700;
+  white-space:nowrap;
+}
+
+.rev-flag{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(255,184,0,0.15);
+  border:1px solid rgba(255,184,0,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;
+}
+
+.expand-arrow{width:16px;height:16px;flex-shrink:0;color:var(--muted);transition:transform .25s;}
+.ch-card.open .expand-arrow{transform:rotate(180deg);}
+
+/* Topic mini progress bar */
+.topic-prog{
+  height:2px;
+  background:var(--muted);
+  margin:0 20px 0 0;
+  overflow:hidden;
+}
+.topic-prog-fill{height:100%;transition:width .4s ease;}
+
+/* ── Chapter body ── */
+.ch-body{display:none;padding:0 16px 14px 20px;border-top:1px solid rgba(255,255,255,0.06);}
+.ch-card.open .ch-body{display:block;}
+
+.topic-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  transition:background .1s;
+}
+.topic-row:last-of-type{border-bottom:none;}
+.topic-row:hover{background:rgba(255,255,255,0.02);}
+
+.topic-check{
+  width:17px;height:17px;border-radius:4px;
+  border:1.5px solid var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:3px;cursor:pointer;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.topic-check::before{
+  content:'';position:absolute;inset:0;
+  background:var(--bio);
+  transform:scale(0);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+  border-radius:2px;
+}
+.topic-check.checked::before{transform:scale(1);}
+.topic-check svg{position:relative;z-index:1;display:none;}
+.topic-check.checked svg{display:block;}
+.topic-check.checked{border-color:var(--bio);}
+
+.topic-text{font-size:13px;color:#B0B0CC;flex:1;line-height:1.55;}
+.topic-text b{color:var(--text);font-weight:600;}
+.topic-done-text{text-decoration:line-through;color:var(--muted)!important;}
+.topic-done-text b{color:var(--muted)!important;}
+
+/* ── Chapter actions ── */
+.ch-actions{
+  display:flex;align-items:center;gap:8px;
+  margin-top:12px;padding-top:12px;
+  border-top:1px solid rgba(255,255,255,0.05);
+  flex-wrap:wrap;
+}
+.action-btn{
+  padding:6px 14px;border-radius:8px;
+  border:1px solid var(--card-border);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-dim);font-size:12px;
+  cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;
+  transition:all .15s;
+}
+.action-btn:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+.action-btn.rev-active{
+  background:rgba(255,184,0,0.1);
+  color:var(--gold);
+  border-color:rgba(255,184,0,0.3);
+}
+.note-wrap{flex:1;min-width:140px;display:flex;align-items:center;gap:6px;}
+.note-icon{font-size:12px;color:var(--muted);}
+.note-input{
+  flex:1;padding:6px 10px;
+  border-radius:8px;
+  border:1px solid var(--card-border);
+  font-size:12px;font-family:'DM Sans',sans-serif;
+  background:rgba(255,255,255,0.04);
+  color:var(--text);outline:none;
+  transition:border-color .15s;
+}
+.note-input::placeholder{color:var(--muted);}
+.note-input:focus{border-color:rgba(255,255,255,0.2);}
+
+/* Alert boxes */
+.alert-del{
+  background:rgba(255,60,60,0.06);
+  border:1px solid rgba(255,60,60,0.2);
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:#FF6B6B;
+  line-height:1.6;margin-bottom:10px;
+}
+.alert-add{
+  background:rgba(255,184,0,0.06);
+  border:1px solid rgba(255,184,0,0.2);
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:var(--gold);
+  line-height:1.6;margin-bottom:10px;
+}
+
+/* Empty state */
+.empty{
+  text-align:center;padding:50px 20px;
+  color:var(--text-dim);font-size:14px;
+}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+
+/* ── Celebration overlay ── */
+.celebrate{
+  position:fixed;inset:0;pointer-events:none;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+}
+.celebrate-badge{
+  font-family:'Syne',sans-serif;
+  font-size:20px;font-weight:800;
+  background:linear-gradient(135deg,var(--bio),var(--chem));
+  color:#fff;
+  padding:18px 36px;border-radius:20px;
+  box-shadow:0 0 60px var(--bio-glow);
+  animation:celebPop .8s cubic-bezier(.34,1.56,.64,1) forwards;
+  opacity:0;transform:scale(0.5);
+}
+@keyframes celebPop{
+  0%{opacity:0;transform:scale(0.5);}
+  30%{opacity:1;transform:scale(1.05);}
+  60%{transform:scale(0.98);}
+  80%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1) translateY(-20px);}
+}
+
+/* Sparkle particles */
+.particle{
+  position:fixed;
+  width:6px;height:6px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:99;
+  animation:particleFly 1s ease-out forwards;
+}
+@keyframes particleFly{
+  0%{opacity:1;transform:translate(0,0) scale(1);}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0);}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px;}
+
+/* Fade in on load */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.app-header{animation:fadeUp .4s ease forwards;}
+.dashboard{animation:fadeUp .4s .1s ease both;}
+.tabs{animation:fadeUp .4s .2s ease both;}
+
+@media(max-width:600px){
+  .app-title{font-size:22px;}
+  .stat-value{font-size:24px;}
+  .ch-meta .priority-badge{display:none;}
+  .header-top{flex-direction:column;}
+  .countdown-pill{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+
+<div class="app">
+
+<!-- ── HEADER ── -->
+<div class="app-header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="app-title">NEET <span>Command Center</span></div>
+      <div class="app-subtitle">80-20 Strategy · Track every topic · Dominate the exam</div>
+    </div>
+    <div class="countdown-pill">
+      <div class="countdown-label">⏱ Days to NEET</div>
+      <div class="countdown-num" id="days-left">—</div>
+      <div class="countdown-sub">May 3, 2026</div>
+    </div>
+  </div>
+  <div class="level-bar" style="margin-top:16px;">
+    <div class="level-badge" id="level-badge">🎯 Aspirant</div>
+    <div class="level-track"><div class="level-fill" id="level-fill" style="width:0%"></div></div>
+    <div class="level-next" id="level-next">Next: Scholar →</div>
+  </div>
+  <div class="quote-bar" id="quote-bar">
+    <span>"</span><span id="quote-text">Consistency beats talent. Show up every single day.</span><span>"</span>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="dashboard">
+  <div class="main-ring-card">
+    <div class="ring-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="8"
+          stroke-dasharray="314.16" stroke-dashoffset="314.16"
+          stroke-linecap="round" id="main-ring" style="transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)"/>
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00E87A"/>
+            <stop offset="100%" stop-color="#1A9FFF"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-pct" id="main-pct">0%</div>
+        <div class="ring-label">Complete</div>
+      </div>
+    </div>
+    <div class="ring-card-label">Overall</div>
+  </div>
+
+  <div class="stats-right">
+    <div class="stats-row-top">
+      <div class="stat-card highlight">
+        <div class="stat-label">Chapters Done</div>
+        <div class="stat-value" id="stat-ch-done">0</div>
+        <div class="stat-sub" id="stat-ch-total">of 26 total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Topics Done</div>
+        <div class="stat-value" id="stat-tp-done">0</div>
+        <div class="stat-sub" id="stat-tp-total">of — topics</div>
+      </div>
+      <div class="stat-card highlight-rev">
+        <div class="stat-label">Flag Revision</div>
+        <div class="stat-value" id="stat-rev">0</div>
+        <div class="stat-sub">chapters flagged</div>
+      </div>
+    </div>
+    <div class="subj-bars">
+      <div class="subj-row">
+        <div class="subj-dot" style="background:var(--bio)"></div>
+        <div class="subj-name" style="color:var(--bio)">Biology</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-bio" style="width:0%;background:linear-gradient(90deg,var(--bio-mid),var(--bio))"></div></div>
+        <div class="subj-pct" id="pct-bio" style="color:var(--bio)">0%</div>
+      </div>
+      <div class="subj-row">
+        <div class="subj-dot" style="background:var(--chem)"></div>
+        <div class="subj-name" style="color:var(--chem)">Chemistry</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-chem" style="width:0%;background:linear-gradient(90deg,var(--chem-mid),var(--chem))"></div></div>
+        <div class="subj-pct" id="pct-chem" style="color:var(--chem)">0%</div>
+      </div>
+      <div class="subj-row">
+        <div class="subj-dot" style="background:var(--phy)"></div>
+        <div class="subj-name" style="color:var(--phy)">Physics</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-phy" style="width:0%;background:linear-gradient(90deg,var(--phy-mid),var(--phy))"></div></div>
+        <div class="subj-pct" id="pct-phy" style="color:var(--phy)">0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab-btn active-bio" onclick="switchTab('bio',this)" id="tbio">🧬 Biology · 360 marks</button>
+  <button class="tab-btn" onclick="switchTab('chem',this)" id="tchem">⚗️ Chemistry · 180 marks</button>
+  <button class="tab-btn" onclick="switchTab('phy',this)" id="tphy">⚡ Physics · 180 marks</button>
+</div>
+
+<!-- ── FILTER ── -->
+<div class="filter-row">
+  <span class="filter-label">Show</span>
+  <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('pending',this)">Pending</button>
+  <button class="filter-btn" onclick="setFilter('done',this)">Completed</button>
+  <button class="filter-btn" onclick="setFilter('revision',this)">Needs Revision</button>
+</div>
+
+<div id="chapter-container"></div>
+
+</div><!-- /app -->
+
+<div class="celebrate" id="celebrate" style="display:none">
+  <div class="celebrate-badge" id="celebrate-badge">✓ Chapter Complete!</div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const DATA = {
+bio:[
+  {id:'bio1',name:'Genetics & Evolution',priority:'must',avgQ:12,subj:'bio',topics:[
+    'Mendel\'s laws — monohybrid, dihybrid, test cross; law of segregation & independent assortment',
+    'Exceptions to Mendel — incomplete dominance, codominance, multiple alleles (ABO blood groups), epistasis',
+    'Chromosomal theory — linkage, crossing over, sex determination (XY, ZW, XO); sex-linked inheritance',
+    'Mutation — point vs frameshift; chromosomal disorders: Trisomy 21, Turner (45X), Klinefelter (XXY)',
+    'DNA structure & replication — Watson-Crick model; semi-conservative (Meselson-Stahl); enzymes (helicase, primase, ligase)',
+    'Transcription & translation — promoter, template strand, codons; ribosomes (70S vs 80S); post-translational modifications',
+    'Gene regulation — Lac operon (inducible), Trp operon (repressible); positive vs negative regulation',
+    'Evolution — Hardy-Weinberg law & disturbing factors; types of natural selection; adaptive radiation; Darwin\'s finches',
+    'Human evolution — Ramapithecus → Homo habilis → Homo erectus → Homo sapiens sapiens timeline'
+  ]},
+  {id:'bio2',name:'Ecology',priority:'must',avgQ:11,subj:'bio',topics:[
+    'Population ecology — logistic (S-curve) vs exponential (J-curve); r vs K strategists; age pyramids',
+    'Population interactions — mutualism, commensalism, parasitism, predation, competition with examples for each',
+    'Ecosystem — food chain, food web, trophic levels; 10% law (Lindemann); ecological pyramids (energy, biomass, number)',
+    'Nutrient cycles — carbon cycle, nitrogen cycle; decomposition stages; humification; mineralization',
+    'Biodiversity — alpha, beta, gamma diversity; India\'s 4 biodiversity hotspots; IUCN categories (VU, EN, CR, EX)',
+    'Conservation — in-situ (national parks, sanctuaries, biosphere reserves) vs ex-situ (seed banks, zoos)',
+    'Environmental issues (retained) — ozone depletion (CFCs, Montreal Protocol); biomagnification; eutrophication'
+  ]},
+  {id:'bio3',name:'Human Physiology',priority:'must',avgQ:10,subj:'bio',topics:[
+    'Blood & circulation — cardiac cycle, SA/AV node, ECG waves (P, QRS, T); cardiac output; blood groups (ABO, Rh)',
+    'Excretion — nephron structure (PCT, Loop of Henle, DCT, CD); countercurrent mechanism; ADH, aldosterone, ANF',
+    'Muscle contraction — sliding filament theory; troponin-tropomyosin complex; role of Ca²⁺ and ATP; types of muscle',
+    'Neural control — resting potential (−70mV), action potential; synapse; reflex arc; CNS vs PNS',
+    'Chemical coordination — pituitary hormones (GH, TSH, ACTH, FSH, LH, ADH, oxytocin); thyroid, adrenal, pancreas disorders',
+    'Locomotion — types of joints (ball & socket, hinge, pivot, gliding); disorders: myasthenia gravis, osteoporosis, gout, arthritis'
+  ]},
+  {id:'bio4',name:'Plant Physiology (retained topics only)',priority:'must',avgQ:7,subj:'bio',
+    deleted:'EXCLUDED chapters: Transport in Plants (osmosis, water potential, apoplast/symplast, transpiration pull) and Mineral Nutrition (essential minerals, deficiency symptoms) are FULLY REMOVED from syllabus — do not study these.',
+    topics:[
+    'Photosynthesis light reactions — PS I & PS II; Z-scheme; photolysis of water; cyclic vs non-cyclic photophosphorylation',
+    'Photosynthesis dark reactions — Calvin cycle (C3, RuBisCO); C4 pathway (Hatch-Slack, Kranz anatomy); CAM; photorespiration',
+    'Respiration — glycolysis (cytoplasm); Krebs cycle (matrix); ETC (inner mitochondrial membrane); ATP yield; RQ values',
+    'Plant growth regulators — auxin (phototropism, apical dominance); gibberellin (bolting, germination); cytokinin (senescence delay); ABA (stress hormone); ethylene (fruit ripening)',
+    'Photoperiodism — short-day, long-day, day-neutral plants; phytochrome (Pr↔Pfr); vernalization concept'
+  ]},
+  {id:'bio5',name:'Biotechnology',priority:'must',avgQ:8,subj:'bio',topics:[
+    'Recombinant DNA technology — restriction enzymes (EcoRI cuts GAATTC); sticky vs blunt ends; vectors: plasmid, bacteriophage, cosmid, BAC, YAC',
+    'PCR — denaturation (94°C), annealing (50–65°C), extension (72°C); Taq polymerase; exponential amplification; uses',
+    'Cloning tools — gel electrophoresis; selectable markers; insertional inactivation; transformation methods',
+    'Blotting — Southern (DNA), Northern (RNA), Western (protein); DNA fingerprinting (VNTR, STR)',
+    'Applications — recombinant insulin (Humulin, E. coli); Rosie cow (human protein milk); Bt cotton (Cry1Ac vs bollworm)',
+    'Transgenic organisms — Golden Rice (beta-carotene); Flavr Savr tomato; RNAi; transgenic mice for disease models',
+    'Gene therapy — ADA deficiency (first gene therapy case); SCID; somatic vs germline gene therapy; ethical issues',
+    'Plant tissue culture & micropropagation — totipotency; callus; somatic hybridization (protoplast fusion); somaclonal variation'
+  ]},
+  {id:'bio6',name:'Reproduction (plants + human)',priority:'must',avgQ:8,subj:'bio',topics:[
+    'Sexual reproduction in angiosperms — pollination types (self, cross, agents); double fertilization; embryo sac (7 cells, 8 nuclei)',
+    'Endosperm & fruit development — endosperm (triploid 3n); true vs false fruits; seed structure (monocot vs dicot)',
+    'Human male reproductive system — spermatogenesis; sperm structure; role of FSH, LH, testosterone; acrosome reaction',
+    'Human female reproductive system — oogenesis; menstrual cycle phases (FSH surge → ovulation → LH surge → progesterone)',
+    'Embryonic development — fertilization → cleavage → morula → blastula → gastrula; primary germ layers; placenta functions',
+    'Reproductive health — contraceptive methods (barrier, IUD, hormonal pills, surgical); MTP Act; STDs (HIV, syphilis, gonorrhoea, hepatitis B)'
+  ]},
+  {id:'bio7',name:'Cell biology & biomolecules',priority:'must',avgQ:7,subj:'bio',topics:[
+    'Cell organelles — ER (rough/smooth), Golgi (cis→trans), mitochondria (F₀-F₁ ATP synthase), chloroplast (thylakoid/stroma), lysosome',
+    'Ribosome — 70S (50S+30S) prokaryotes; 80S (60S+40S) eukaryotes; mitochondrial ribosome = 70S',
+    'Cell membrane — fluid mosaic model (Singer-Nicholson 1972); integral vs peripheral proteins; active vs passive transport; endocytosis',
+    'Mitosis — PMAT phases; checkpoints (G1, S, G2, M); spindle; plant vs animal cell (centriole absent in plants)',
+    'Meiosis — crossing over in prophase I; synapsis; bivalent; chiasmata; significance (genetic variation)',
+    'Enzyme kinetics — Km (substrate conc at ½Vmax); competitive vs non-competitive inhibition; cofactors vs coenzymes',
+    'Enzyme classification (new 2024) — oxidoreductases, transferases, hydrolases, lyases, isomerases, ligases with examples'
+  ]},
+  {id:'bio8',name:'Human Health & Disease',priority:'high',avgQ:5,subj:'bio',topics:[
+    'Immunity — innate vs acquired; active (vaccines) vs passive (colostrum, antivenom); primary vs secondary immune response',
+    'Humoral immunity — B cells → plasma cells → antibodies; IgG (most abundant), IgM (first response), IgA (secretions), IgE (allergy)',
+    'Cell-mediated immunity — T helper, T cytotoxic, T suppressor, memory T cells; MHC complex',
+    'Malaria — Plasmodium vivax/falciparum; lifecycle: mosquito (sexual) → human liver (exoerythrocytic) → RBC (erythrocytic)',
+    'Other diseases — Ascariasis (Ascaris lumbricoides); Filariasis (Wuchereria bancrofti); Typhoid (Salmonella typhi — Widal test)',
+    'Dengue & Chikungunya (new 2024) — Aedes aegypti vector; dengue: 4 serotypes, thrombocytopenia; no specific antiviral',
+    'Cancer — proto-oncogene → oncogene; benign vs malignant; metastasis; AIDS: HIV retrovirus; CD4+ T cell destruction; ELISA'
+  ]},
+  {id:'bio9',name:'Biological Classification & Diversity',priority:'high',avgQ:4,subj:'bio',topics:[
+    'Five kingdom system — Monera, Protista, Fungi, Plantae, Animalia; basis: cell type, body organization, nutrition, reproduction',
+    'Kingdom Monera — archaebacteria (extreme habitats) vs eubacteria; mycoplasma (no cell wall, smallest cell); cyanobacteria',
+    'Kingdom Fungi — chitin cell wall; classes: Zygomycetes (Rhizopus), Ascomycetes (Penicillium, yeast), Basidiomycetes (mushroom), Deuteromycetes',
+    'Plant kingdom — algae (Chlorophyta/Rhodophyta/Phaeophyta); bryophytes (no vascular); pteridophytes; gymnosperms vs angiosperms',
+    'Animal kingdom — Porifera to Chordata; coelom types; bilateral vs radial symmetry; notochord; examples per phylum'
+  ]}
+],
+chem:[
+  {id:'ch1',name:'Organic chemistry — GOC & isomerism',priority:'must',avgQ:5,subj:'chem',topics:[
+    'Inductive effect — +I groups (alkyl) vs -I groups (halogens, NO₂); acidic/basic strength prediction',
+    'Resonance & hyperconjugation — stability order of carbocations; aromaticity (Hückel 4n+2 π electrons)',
+    'Reaction intermediates — carbocation (3°>2°>1°), carbanion (1°>2°>3°), free radical stability',
+    'Isomerism — chain, position, functional, tautomerism; geometric (E/Z, cis/trans conditions); optical (R/S, Fischer, meso)',
+    'Reaction mechanisms — SN1 (3° carbon, polar protic) vs SN2 (1° carbon, polar aprotic); E1 vs E2; EAS (activating/deactivating groups)'
+  ]},
+  {id:'ch2',name:'Coordination compounds',priority:'must',avgQ:4,subj:'chem',topics:[
+    'Werner\'s theory — primary valence (oxidation state) vs secondary valence (coordination number); coordination sphere',
+    'IUPAC naming — ligand order (alphabetical); anionic ligands get -o; cationic complex name then anion; oxidation state in Roman numerals',
+    'Isomerism — geometric (cis/trans in square planar & octahedral), optical, linkage (NO₂ vs ONO), ionization, solvate',
+    'Valence Bond Theory — inner orbital (low spin, d²sp³/dsp²) vs outer orbital (high spin, sp³d²); magnetic moment = √n(n+2) BM',
+    'Crystal Field Theory — Δo splitting; spectrochemical series (I⁻ weak → CN⁻ strong); high vs low spin; color reason (d-d transition)'
+  ]},
+  {id:'ch3',name:'Chemical bonding & molecular structure',priority:'must',avgQ:4,subj:'chem',topics:[
+    'VSEPR theory — shapes: linear (BeCl₂), bent (H₂O), trigonal planar (BF₃), pyramidal (NH₃), tetrahedral (CH₄); bond angles',
+    'Hybridization — sp (180°), sp² (120°), sp³ (109.5°), sp³d, sp³d²; lone pairs reduce bond angle; exceptions (XeF₂ = sp³d)',
+    'Fajan\'s rules — higher charge, smaller cation, larger anion → more covalent character; polarizability',
+    'Molecular Orbital Theory — bond order = (bonding − antibonding)/2; O₂ is paramagnetic (2 unpaired e⁻); N₂ bond order = 3',
+    'H-bonding — intramolecular (o-nitrophenol) vs intermolecular; effect on boiling point; HF < H₂O in H-bond due to fewer bonds'
+  ]},
+  {id:'ch4',name:'p-block elements',priority:'must',avgQ:5,subj:'chem',topics:[
+    'Group 15 — NH₃ vs PH₃ (NH₃ more basic due to lone pair availability); HNO₃ (Ostwald process); P allotropes (white, red, black)',
+    'Group 16 — O₃ bent structure (lone pair on central O); SO₂/SO₃; H₂SO₄ contact process; H₂O vs H₂S boiling point anomaly',
+    'Group 17 (Halogens) — reactivity F>Cl>Br>I; HF weak acid (strong H-bond); interhalogen compounds (IF₇ has 7 bonds); bleaching powder',
+    'Group 18 — XeF₂ (linear, sp³d), XeF₄ (square planar, sp³d²), XeF₆ (distorted octahedral); uses of noble gases',
+    'Group 13 & 14 — diagonal relationship B & Si; anomalous behavior of B; allotropes of carbon (diamond, graphite, fullerene); CO reducing agent'
+  ]},
+  {id:'ch5',name:'Equilibrium',priority:'must',avgQ:3,subj:'chem',topics:[
+    'Law of Mass Action — Kc vs Kp: Kp = Kc(RT)^Δn; Le Chatelier\'s principle (temperature, pressure, concentration effects)',
+    'Ionic equilibrium — Ka, Kb; Kw = Ka × Kb = 10⁻¹⁴; pH of weak acid/base (pH = ½(pKa − log C)); buffer solutions',
+    'Henderson-Hasselbalch equation — pH = pKa + log([A⁻]/[HA]); buffer capacity; common ion effect on solubility',
+    'Solubility product — Ksp; precipitation condition (Q > Ksp); selective precipitation using common ion effect'
+  ]},
+  {id:'ch6',name:'Electrochemistry',priority:'must',avgQ:3,subj:'chem',topics:[
+    'Electrochemical cells — Galvanic (spontaneous, ΔG<0) vs electrolytic; Ecell = Ecathode − Eanode; SHE = 0V reference',
+    'Nernst equation — Ecell = E°cell − (RT/nF)ln Q = E°cell − (0.0592/n)log Q at 25°C; numerical problems',
+    'Faraday\'s laws — W = ZIt = (M/nF)It; electrolysis of H₂O, CuSO₄, NaCl (brine) — products at each electrode',
+    'Conductance — Λm vs concentration; Kohlrausch\'s law (Λ°m = sum of ionic conductances); weak vs strong electrolyte curves'
+  ]},
+  {id:'ch7',name:'Aldehydes, ketones & carboxylic acids',priority:'must',avgQ:4,subj:'chem',topics:[
+    'Nucleophilic addition — HCN (cyanohydrin), Grignard (Mg alkyl halide), NaBH₄ (mild reducing), LiAlH₄ (strong reducing)',
+    'Oxidation tests — Tollens (Ag mirror, aldehydes only), Fehling (Cu₂O red ppt, aldehydes only), Tollen\'s vs Benedict\'s',
+    'Condensation reactions — Aldol condensation (α-H required); Cannizzaro (no α-H: HCHO, benzaldehyde; disproportionation)',
+    'Carboxylic acids — acidity order; HVZ reaction; ester formation; acyl chloride > anhydride > ester > amide reactivity',
+    'Named reactions — Kolbe (carboxylation), Clemmensen (C=O→CH₂), Wolff-Kishner, Rosenmund, Stephen, Etard reduction'
+  ]},
+  {id:'ch8',name:'Chemical kinetics',priority:'high',avgQ:3,subj:'chem',topics:[
+    'Rate laws — zero order (t½ = [A]₀/2k), first order (t½ = 0.693/k, conc-independent), second order; integrated equations',
+    'Arrhenius equation — k = Ae^(−Ea/RT); ln(k₂/k₁) = (Ea/R)(1/T₁ − 1/T₂); catalyst lowers Ea without being consumed',
+    'Collision theory — threshold energy; orientation factor (steric factor p); temperature coefficient ≈ 2 per 10°C rise'
+  ]},
+  {id:'ch9',name:'d-block & f-block elements',priority:'high',avgQ:3,subj:'chem',topics:[
+    'Electronic configuration anomalies — Cr: [Ar]3d⁵4s¹ (half-filled d); Cu: [Ar]3d¹⁰4s¹ (fully filled d); variable oxidation states',
+    'KMnO₄ reactions — acidic medium (Mn²⁺, purple→colorless); basic medium (MnO₂, brown ppt); neutral (MnO₂)',
+    'K₂Cr₂O₇ — dichromate ion structure (two tetrahedra sharing corner); reactions with Fe²⁺, SO₂, alcohol; pH dependent',
+    'Lanthanide contraction — poor shielding by 4f electrons → radius decreases across lanthanides; consequences on 5d series'
+  ]}
+],
+phy:[
+  {id:'ph1',name:'Mechanics (Laws of Motion + Work-Energy + Rotation)',priority:'must',avgQ:6,subj:'phy',topics:[
+    'Newton\'s laws — free body diagrams; friction (static ≥ kinetic); Atwood machine; pseudo force (non-inertial frames)',
+    'Work-energy theorem — conservative vs non-conservative forces; spring PE (½kx²); elastic & inelastic collisions',
+    'Circular motion — centripetal acceleration v²/r; banking angle: tan θ = v²/rg; conical pendulum; min speed at top of loop',
+    'Rotational mechanics — MI of rod (ML²/12), disc (MR²/2), ring (MR²), solid sphere (2MR²/5); parallel & perpendicular axis theorems',
+    'Angular momentum — L = Iω; conservation (figure skater); torque τ = Iα; rolling without slipping: v_cm = Rω'
+  ]},
+  {id:'ph2',name:'Electrostatics',priority:'must',avgQ:5,subj:'phy',topics:[
+    'Coulomb\'s law & superposition — F = kq₁q₂/r²; field due to ring (on axis), disc, infinite sheet (σ/2ε₀)',
+    'Gauss\'s law — flux = Q_enc/ε₀; application to sphere (E = kQ/r²), cylinder, infinite plane',
+    'Electric potential — V = kq/r; potential due to dipole; equipotential surfaces ⊥ field lines; work = qΔV',
+    'Capacitors — C = ε₀A/d (parallel plate); dielectric: C\' = KC; series (1/C_eq = Σ1/Cᵢ); parallel (C_eq = ΣCᵢ); energy = ½CV²'
+  ]},
+  {id:'ph3',name:'Current electricity',priority:'must',avgQ:5,subj:'phy',topics:[
+    'Ohm\'s law — R = ρL/A; temperature: R_T = R₀(1 + αΔT); colour code: BB ROY of Great Britain Very Good Wife',
+    'Kirchhoff\'s laws — KCL (Σ currents = 0 at node), KVL (Σ EMF = Σ IR); Wheatstone bridge balance: P/Q = R/S',
+    'Potentiometer — null method; comparing EMFs; measuring internal resistance; advantages over voltmeter',
+    'Cells — EMF & internal resistance; series (EMF adds, r adds); parallel (same EMF, r reduces); terminal voltage V = E − Ir'
+  ]},
+  {id:'ph4',name:'Magnetic effects & magnetism',priority:'must',avgQ:5,subj:'phy',topics:[
+    'Biot-Savart law — dB = (μ₀/4π)(I dl×r̂/r²); field at center of circular loop B = μ₀I/2R; solenoid B = μ₀nI',
+    'Ampere\'s law — ∮B·dl = μ₀I_enc; toroid (B = μ₀nI inside, 0 outside); force between parallel currents',
+    'Motion of charges — F = qvB; cyclotron radius r = mv/qB; cyclotron frequency (independent of v); velocity selector',
+    'Galvanometer conversions — shunt S = Ig·G/(I−Ig) for ammeter; series R = G(V/Ig − 1) for voltmeter',
+    'Magnetic materials — diamagnetic (χ<0, repelled), paramagnetic (χ>0, small), ferromagnetic (χ>>0); Curie law; hysteresis'
+  ]},
+  {id:'ph5',name:'Optics (Ray + Wave)',priority:'must',avgQ:5,subj:'phy',topics:[
+    'Mirror formula — 1/v + 1/u = 1/f; sign convention; magnification m = −v/u; concave vs convex mirror uses',
+    'Refraction & lens — Snell\'s law; lens maker\'s equation (1/f = (n−1)(1/R₁−1/R₂)); TIR: sin θc = 1/n; lenses in contact',
+    'Prism — minimum deviation condition (r₁=r₂=A/2); δ_m formula; angular dispersion; Cauchy\'s relation',
+    'YDSE — fringe width β = λD/d; condition bright: Δ=nλ, dark: Δ=(2n+1)λ/2; effect of immersion in medium',
+    'Diffraction & polarization — single slit minima: a sinθ = nλ; Brewster\'s law: tan iₚ = n; Malus law: I = I₀cos²θ'
+  ]},
+  {id:'ph6',name:'Modern physics',priority:'must',avgQ:5,subj:'phy',topics:[
+    'Photoelectric effect — KE_max = hν − φ = eV₀; stopping potential; threshold frequency ν₀ = φ/h; intensity ≠ KE',
+    'Bohr model — Eₙ = −13.6/n² eV; rₙ = 0.529n² Å; H-spectrum series (Lyman UV, Balmer visible, Paschen IR)',
+    'de Broglie — λ = h/mv = h/√(2mK); Davisson-Germer experiment; electron in orbit: nλ = 2πr',
+    'Radioactivity — α (+2, +4 mass), β (±1, 0 mass), γ (0, 0); N = N₀(½)^(t/T½); binding energy per nucleon curve',
+    'Semiconductors — p-type (holes) vs n-type (electrons); p-n junction; diode rectification; Zener (voltage regulation); transistor CE: β = Ic/Ib'
+  ]},
+  {id:'ph7',name:'Thermodynamics & kinetic theory',priority:'must',avgQ:4,subj:'phy',topics:[
+    'Laws of thermodynamics — zeroth (thermal equilibrium); first (ΔU = Q − W); second (entropy; Carnot: η = 1 − T₂/T₁)',
+    'Thermodynamic processes — isothermal (ΔU=0), adiabatic (Q=0, TV^(γ-1)=const), isobaric, isochoric; PV diagrams',
+    'Kinetic theory — v_rms = √(3RT/M); degrees of freedom: monoatomic 3, diatomic 5, triatomic 6; Cv = (f/2)R; Cp = Cv + R'
+  ]},
+  {id:'ph8',name:'Waves & oscillations',priority:'high',avgQ:3,subj:'phy',topics:[
+    'SHM — x = A sin(ωt+φ); T_spring = 2π√(m/k); T_pendulum = 2π√(L/g); KE = ½mω²(A²−x²); PE = ½mω²x²',
+    'Wave motion — y = A sin(kx−ωt); standing waves: nodes (displacement=0), antinodes (max displacement)',
+    'Sound & beats — beat frequency = |f₁−f₂|; Doppler: f\' = f(v±v₀)/(v∓vs); resonance: open pipe L=nλ/2, closed L=(2n−1)λ/4'
+  ]},
+  {id:'ph9',name:'Gravitation & properties of matter',priority:'high',avgQ:3,subj:'phy',topics:[
+    'Gravitation — Kepler\'s laws (T² ∝ r³); escape velocity √(2gR) = 11.2 km/s; orbital velocity √(gR) = 7.9 km/s',
+    'Fluid mechanics — Bernoulli\'s theorem (P+½ρv²+ρgh = const); Torricelli (v=√2gh); surface tension; Stokes\' law (F=6πηrv)',
+    'Elasticity — Young\'s modulus (Y = FL/AΔL); stress-strain curve; elastic limit; elastic PE = ½ × stress × strain × volume'
+  ]}
+]};
+
+const SUBJ_CONFIG = {
+  bio:{label:'Biology',color:'#00E87A',tabClass:'active-bio',
+    deleted:'EXCLUDED from syllabus (do NOT study): Transport in Plants · Mineral Nutrition · Digestion & Absorption · Reproduction in Organisms (Ch.1 Class 12) · Secondary Growth · Cockroach anatomy · Environmental Issues (most subtopics)',
+    added:'Expanded/added in 2024: Biotechnology Applications (up to 8 Qs) · Protein biosynthesis · Dengue & Chikungunya · Enzyme classification & nomenclature · Plant tissue culture moved into Biotechnology'},
+  chem:{label:'Chemistry',color:'#1A9FFF',tabClass:'active-chem',
+    deleted:'EXCLUDED: States of Matter (gases/liquids subtopics) · Surface Chemistry · Nuclear Chemistry · Environmental Chemistry · Chemistry in Everyday Life (significantly reduced)',
+    added:''},
+  phy:{label:'Physics',color:'#FF5A1F',tabClass:'active-phy',
+    deleted:'EXCLUDED: Communication Systems · Experimental Skills chapter · Poisson\'s ratio · Wein\'s displacement law · Greenhouse effect (Physics) · Reynolds number',
+    added:'Added in 2024: Satellite motion in more detail'}
+};
+
+const QUOTES = [
+  'Consistency beats talent. Show up every single day.',
+  'One chapter at a time. One mark at a time. That\'s how ranks are built.',
+  'The topper you envy studied when you were sleeping.',
+  'NEET doesn\'t test intelligence — it tests preparation.',
+  'Every topic you master is one question you own in the exam hall.',
+  'Pressure makes diamonds. You\'re being forged right now.',
+  'Your future patients are waiting. Don\'t let them down.',
+  'Hard work compounds. Start now, thank yourself later.',
+  'The pain of discipline is far less than the pain of regret.',
+  'You\'re not just studying biology — you\'re learning to save lives.',
+];
+
+const LEVELS = [
+  {min:0,max:20,label:'🎯 Aspirant',next:'Scholar'},
+  {min:20,max:40,label:'📚 Scholar',next:'Warrior'},
+  {min:40,max:60,label:'⚔️ Warrior',next:'Champion'},
+  {min:60,max:80,label:'🏆 Champion',next:'Legend'},
+  {min:80,max:101,label:'🔥 Legend',next:null},
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let state = {};
+let currentTab = 'bio';
+let currentFilter = 'all';
+let quoteIdx = 0;
+
+function loadState(){
+  try{const raw=localStorage.getItem('neet-tracker-v3');if(raw)state=JSON.parse(raw);}catch(e){state={};}
+}
+function saveState(){
+  try{localStorage.setItem('neet-tracker-v3',JSON.stringify(state));}catch(e){}
+}
+function getChState(id){
+  if(!state[id])state[id]={done:false,topics:{},note:'',revision:false};
+  return state[id];
+}
+function countTopicsDone(id,topics){
+  const s=getChState(id);
+  return topics.filter((_,i)=>s.topics[i]).length;
+}
+function findChapter(id){
+  for(const subj of['bio','chem','phy']){
+    const ch=DATA[subj].find(c=>c.id===id);
+    if(ch)return ch;
+  }
+  return null;
+}
+
+// ─── COUNTDOWN ──────────────────────────────────────────────────────────────
+function updateCountdown(){
+  const exam = new Date('2026-05-03T00:00:00');
+  const now = new Date();
+  const diff = Math.ceil((exam - now) / (1000*60*60*24));
+  const el = document.getElementById('days-left');
+  if(el) el.textContent = diff > 0 ? diff : '🔥';
+}
+
+// ─── QUOTES ─────────────────────────────────────────────────────────────────
+function rotateQuote(){
+  const el = document.getElementById('quote-text');
+  if(!el) return;
+  el.parentElement.style.opacity = '0';
+  setTimeout(()=>{
+    quoteIdx = (quoteIdx+1) % QUOTES.length;
+    el.textContent = QUOTES[quoteIdx];
+    el.parentElement.style.opacity = '1';
+  }, 400);
+}
+
+// ─── LEVEL SYSTEM ───────────────────────────────────────────────────────────
+function updateLevel(pct){
+  const level = LEVELS.find(l => pct >= l.min && pct < l.max) || LEVELS[LEVELS.length-1];
+  const badge = document.getElementById('level-badge');
+  const fill = document.getElementById('level-fill');
+  const next = document.getElementById('level-next');
+  if(badge) badge.textContent = level.label;
+  if(fill){
+    const range = level.max - level.min;
+    const progress = ((pct - level.min) / range) * 100;
+    fill.style.width = Math.min(100,progress) + '%';
+  }
+  if(next) next.textContent = level.next ? `Next: ${level.next} →` : '🔥 Maximum level!';
+}
+
+// ─── STATS ──────────────────────────────────────────────────────────────────
+function calcStats(){
+  let totalCh=0,doneCh=0,totalTp=0,doneTp=0,revCh=0;
+  const subjTp={bio:{done:0,total:0},chem:{done:0,total:0},phy:{done:0,total:0}};
+  ['bio','chem','phy'].forEach(subj=>{
+    DATA[subj].forEach(ch=>{
+      totalCh++;
+      const s=getChState(ch.id);
+      if(s.done)doneCh++;
+      if(s.revision)revCh++;
+      ch.topics.forEach((_,i)=>{
+        totalTp++;subjTp[subj].total++;
+        if(s.topics[i]){doneTp++;subjTp[subj].done++;}
+      });
+    });
+  });
+
+  const pctOverall = totalTp ? Math.round(doneTp/totalTp*100) : 0;
+
+  // Update stat cards
+  document.getElementById('stat-ch-done').textContent = doneCh;
+  document.getElementById('stat-ch-total').textContent = 'of '+totalCh+' total';
+  document.getElementById('stat-tp-done').textContent = doneTp;
+  document.getElementById('stat-tp-total').textContent = 'of '+totalTp+' topics';
+  document.getElementById('stat-rev').textContent = revCh;
+
+  // Update main ring
+  const ring = document.getElementById('main-ring');
+  const circumference = 314.16;
+  if(ring){
+    const offset = circumference - (pctOverall/100)*circumference;
+    ring.style.strokeDashoffset = offset;
+  }
+  document.getElementById('main-pct').textContent = pctOverall+'%';
+
+  // Subject bars
+  ['bio','chem','phy'].forEach(subj=>{
+    const pct = subjTp[subj].total ? Math.round(subjTp[subj].done/subjTp[subj].total*100) : 0;
+    document.getElementById('bar-'+subj).style.width = pct+'%';
+    document.getElementById('pct-'+subj).textContent = pct+'%';
+  });
+
+  updateLevel(pctOverall);
+}
+
+// ─── CELEBRATE ──────────────────────────────────────────────────────────────
+function celebrate(chName){
+  const el = document.getElementById('celebrate');
+  const badge = document.getElementById('celebrate-badge');
+  if(!el||!badge) return;
+  badge.textContent = '✓ ' + chName + ' — Done!';
+  el.style.display = 'flex';
+  badge.style.animation = 'none';
+  badge.offsetHeight; // reflow
+  badge.style.animation = 'celebPop .9s cubic-bezier(.34,1.56,.64,1) forwards';
+  // Particles
+  spawnParticles();
+  setTimeout(()=>{ el.style.display='none'; }, 1200);
+}
+
+function spawnParticles(){
+  const colors=['#00E87A','#1A9FFF','#FF5A1F','#FFB800','#fff'];
+  for(let i=0;i<18;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.left = (30+Math.random()*40)+'vw';
+    p.style.top = (30+Math.random()*40)+'vh';
+    const angle = Math.random()*360;
+    const dist = 80+Math.random()*150;
+    p.style.setProperty('--tx', Math.cos(angle*Math.PI/180)*dist+'px');
+    p.style.setProperty('--ty', Math.sin(angle*Math.PI/180)*dist+'px');
+    p.style.animationDelay = (Math.random()*0.3)+'s';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 1500);
+  }
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function renderChapters(){
+  const container = document.getElementById('chapter-container');
+  container.innerHTML = '';
+  const subj = currentTab;
+  const cfg = SUBJ_CONFIG[subj];
+  const chapters = DATA[subj];
+  const cardClass = subj+'-card';
+
+  if(cfg.deleted){
+    const d = document.createElement('div');
+    d.className = 'alert-del';
+    d.innerHTML = '🚫 <strong>Excluded from syllabus:</strong> ' + cfg.deleted;
+    container.appendChild(d);
+  }
+  if(cfg.added){
+    const a = document.createElement('div');
+    a.className = 'alert-add';
+    a.innerHTML = '✦ <strong>Added / expanded in 2024:</strong> ' + cfg.added;
+    container.appendChild(a);
+  }
+
+  const mustLabel = document.createElement('div');
+  mustLabel.className = 'sec-label';
+  mustLabel.textContent = '🔥 Must-do chapters';
+  container.appendChild(mustLabel);
+
+  let highSection = false;
+
+  chapters.forEach(ch=>{
+    const s = getChState(ch.id);
+    const topicsDone = countTopicsDone(ch.id, ch.topics);
+    const topicsTotal = ch.topics.length;
+
+    if(ch.priority==='high' && !highSection){
+      highSection=true;
+      const hl=document.createElement('div');
+      hl.className='sec-label';
+      hl.textContent='⭐ High priority chapters';
+      container.appendChild(hl);
+    }
+    if(ch.priority==='mod' && !highSection){
+      highSection=true;
+      const hl=document.createElement('div');
+      hl.className='sec-label';
+      hl.textContent='◎ Moderate priority';
+      container.appendChild(hl);
+    }
+
+    if(currentFilter==='pending' && s.done) return;
+    if(currentFilter==='done' && !s.done) return;
+    if(currentFilter==='revision' && !s.revision) return;
+
+    const card = document.createElement('div');
+    card.className = 'ch-card '+cardClass+(s.done?' chapter-done':'')+(s.revision?' needs-rev':'');
+    card.id = 'card-'+ch.id;
+
+    const badgeClass = ch.priority==='must'?'badge-must':ch.priority==='high'?'badge-high':'badge-mod';
+    const badgeText = ch.priority==='must'?'Must-do':ch.priority==='high'?'High':'Moderate';
+    const progPct = Math.round(topicsDone/topicsTotal*100);
+
+    card.innerHTML = `
+    <div class="ch-header" onclick="toggleCard('${ch.id}')">
+      <div class="ch-check ${s.done?'checked':''}" onclick="event.stopPropagation();toggleChapter('${ch.id}')" title="Mark chapter done">
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="ch-name ${s.done?'ch-done-text':''}">${ch.name}</span>
+      <div class="ch-meta">
+        ${s.revision?'<div class="rev-flag" title="Needs revision">⚑</div>':''}
+        <span class="priority-badge ${badgeClass}">${badgeText}</span>
+        <span class="q-tag">~${ch.avgQ}Q</span>
+        <svg class="expand-arrow" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div class="topic-prog"><div class="topic-prog-fill" style="width:${progPct}%;background:${cfg.color}"></div></div>
+    <div class="ch-body">
+      ${ch.deleted?`<div class="alert-del" style="margin-bottom:10px;font-size:11px;">${ch.deleted}</div>`:''}
+      ${ch.topics.map((t,i)=>{
+        const tdone=s.topics[i]||false;
+        return `<div class="topic-row">
+          <div class="topic-check ${tdone?'checked':''}" onclick="toggleTopic('${ch.id}',${i})" title="Mark done">
+            <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3 5.5L8 1" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="topic-text ${tdone?'topic-done-text':''}">${t.replace(/^([^—]+)—/,'<b>$1</b>—')}</div>
+        </div>`;
+      }).join('')}
+      <div class="ch-actions">
+        <div class="note-wrap">
+          <span class="note-icon">✎</span>
+          <input class="note-input" type="text" placeholder="Add a revision note..." value="${(s.note||'').replace(/"/g,'&quot;')}" oninput="saveNote('${ch.id}',this.value)" />
+        </div>
+        <button class="action-btn ${s.revision?'rev-active':''}" onclick="toggleRevision('${ch.id}')">
+          ${s.revision?'⚑ Flagged':'Flag revision'}
+        </button>
+        <button class="action-btn" onclick="resetChapter('${ch.id}')">Reset</button>
+      </div>
+    </div>`;
+
+    container.appendChild(card);
+  });
+
+  if(container.querySelectorAll('.ch-card').length===0){
+    const empty=document.createElement('div');
+    empty.className='empty';
+    empty.innerHTML = `<div class="empty-icon">${currentFilter==='done'?'🏆':currentFilter==='revision'?'📌':'🔍'}</div>
+      ${currentFilter==='done'?'No chapters completed yet. Start grinding!':
+        currentFilter==='revision'?'No chapters flagged for revision.':'No chapters found.'}`;
+    container.appendChild(empty);
+  }
+
+  calcStats();
+}
+
+// ─── ACTIONS ────────────────────────────────────────────────────────────────
+function toggleCard(id){
+  const card=document.getElementById('card-'+id);
+  if(card)card.classList.toggle('open');
+}
+
+function toggleChapter(id){
+  const s=getChState(id);
+  const wasDone=s.done;
+  s.done=!s.done;
+  if(s.done){
+    const ch=findChapter(id);
+    if(ch)ch.topics.forEach((_,i)=>{s.topics[i]=true;});
+  }
+  saveState();
+  renderChapters();
+  if(!wasDone && s.done){
+    const ch=findChapter(id);
+    setTimeout(()=>celebrate(ch?ch.name:'Chapter'),50);
+  }
+}
+
+function toggleTopic(chId,idx){
+  const s=getChState(chId);
+  s.topics[idx]=!s.topics[idx];
+  const ch=findChapter(chId);
+  if(ch){const allDone=ch.topics.every((_,i)=>s.topics[i]);s.done=allDone;}
+  saveState();
+  renderChapters();
+  const card=document.getElementById('card-'+chId);
+  if(card&&!card.classList.contains('open'))card.classList.add('open');
+}
+
+function toggleRevision(id){
+  const s=getChState(id);
+  s.revision=!s.revision;
+  saveState();
+  renderChapters();
+}
+
+function saveNote(id,val){
+  const s=getChState(id);
+  s.note=val;
+  saveState();
+}
+
+function resetChapter(id){
+  state[id]={done:false,topics:{},note:'',revision:false};
+  saveState();
+  renderChapters();
+}
+
+function switchTab(subj,btn){
+  currentTab=subj;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active-bio','active-chem','active-phy'));
+  btn.classList.add('active-'+subj);
+  renderChapters();
+}
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChapters();
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+loadState();
+updateCountdown();
+renderChapters();
+setInterval(rotateQuote, 8000);
+setInterval(updateCountdown, 60000);
+</script>
+</body>
+</html>
